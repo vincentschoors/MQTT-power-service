@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  wol-service:
+    image: containerreg.schoors.duckdns.org/mqtt-wol-service:latest
+    container_name: mqtt-wol-app
+    restart: unless-stopped
+    env_file: 
+      - stack.env
+    volumes:
+      - ./logs:/app/logs
