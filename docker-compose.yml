@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   ping-service:
-    image: containerreg.schoors.duckdns.org/mqtt-wol-service:latest
-    container_name: mqtt-wol-app
+    image: containerreg.schoors.duckdns.org/mqtt-power-service:latest
+    container_name: mqtt-power-service
     restart: unless-stopped
     env_file: 
       - stack.env
