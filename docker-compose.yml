@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  wol-service:
+  ping-service:
     image: containerreg.schoors.duckdns.org/mqtt-wol-service:latest
     container_name: mqtt-wol-app
     restart: unless-stopped
@@ -9,3 +9,11 @@ services:
       - stack.env
     volumes:
       - ./logs:/app/logs
+    networks:
+      macvlan_net:
+        ipv4_address: 192.168.50.202
+
+networks:
+  macvlan_net:
+    external: true
+    name: macvlan_network

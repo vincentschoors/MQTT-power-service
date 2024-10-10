@@ -3,7 +3,6 @@ from wakeonlan import send_magic_packet
 import os
 import sys
 from dotenv import load_dotenv
-from icmplib import ping
 import logging
 
 # Load environment variables
@@ -26,8 +25,9 @@ logging.info("load_dotenv")
 # MQTT Settings from environment variables
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mqtt-broker")
 MQTT_PORT = int(os.getenv("MQTT_PORT", 1883))
-MQTT_TARGET_TOPIC = "wol/target/wake"
-MQTT_SERVICE_STATUS_TOPIC = "wol/service/status"
+MQTT_TARGET_TOPIC = os.getenv("MQTT_TARGET_TOPIC")
+MQTT_SERVICE_STATUS_TOPIC = os.getenv("MQTT_SERVICE_STATUS_TOPIC")
+MQTT_SHUTDOWN_TOPIC= os.getenv("MQTT_SHUTDOWN_TOPIC")
 MQTT_USERNAME = os.getenv("MQTT_USERNAME")
 MQTT_PASSWORD = os.getenv("MQTT_PASSWORD")
 logging.info("Environment variables loaded")
@@ -52,17 +52,20 @@ def on_unsubscribe(client, userdata, mid, reason_code_list, properties):
 # Callback function for when a message is received on a subscribed topic
 def on_message(client, userdata, msg):
     logging.info(f"Message received: Topic: {msg.topic}, Payload: {msg.payload.decode()}")
-
-    # Extract the MAC address from the payload
-    target_mac_address = msg.payload.decode().strip()
+    command = msg.payload.decode()
+    if command.startswith("ON:"):
+        # Extract the MAC address from the payload
+        target_mac_address = command[3:].strip()
     
-    # Validate MAC address format (basic validation, can be extended if needed)
-    if len(target_mac_address) == 17 and all(c in "0123456789ABCDEFabcdef:" for c in target_mac_address):
-        logging.info(f"Sending Wake-on-LAN magic packet to {target_mac_address}")
-        send_magic_packet(target_mac_address)
-    else:
-        logging.error(f"Invalid MAC address: {target_mac_address}")
-        return False
+        # Validate MAC address format (basic validation, can be extended if needed)
+        if len(target_mac_address) == 17 and all(c in "0123456789ABCDEFabcdef:" for c in target_mac_address):
+            logging.info(f"Sending Wake-on-LAN magic packet to {target_mac_address}")
+            send_magic_packet(target_mac_address)
+        else:
+            logging.error(f"Invalid MAC address: {target_mac_address}")
+            return False
+    elif command == "OFF":
+        client.publish(MQTT_SHUTDOWN_TOPIC, "shutdown", qos=1)
 
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
